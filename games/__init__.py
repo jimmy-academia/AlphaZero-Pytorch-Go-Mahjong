@@ -13,9 +13,9 @@ from games.base_game import BaseGame
 
 
 def find_game_using_name(game_name):
-    """Import the module "data/[dataset_name]_dataset.py".
-    In the file, the class called DatasetNameDataset() will
-    be instantiated. It has to be a subclass of BaseDataset,
+    """Import the module "games/[game_name]_game.py".
+    In the file, the class called [GameName]Game() will
+    be instantiated. It has to be a subclass of BaseGame,
     and it is case-insensitive.
     """
     game_filename = "games." + game_name + "_game"
@@ -31,7 +31,7 @@ def find_game_using_name(game_name):
     if game is None:
         raise NotImplementedError("In %s.py, there should be a subclass of BaseGAME with class name that matches %s in lowercase." % (game_filename, target_game_name))
 
-    return dataset
+    return game
 
 
 def get_option_setter(dataset_name):
@@ -42,8 +42,7 @@ def get_option_setter(dataset_name):
 
 
 def create_game(opt):
-    """Create a dataset given the option.
-    This function wraps the class CustomDatasetDataLoader.
+    """Create a game given the option.
         This is the main interface between this package and 'train.py'/'test.py'
     Example:
         >>> from games import create_game
