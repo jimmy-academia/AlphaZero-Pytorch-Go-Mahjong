@@ -34,11 +34,10 @@ def find_game_using_name(game_name):
     return game
 
 
-def get_option_setter(dataset_name):
+def get_option_setter(game_name):
     """Return the static method <modify_commandline_options> of the dataset class."""
-    # dataset_class = find_dataset_using_name(dataset_name)
-    # return dataset_class.modify_commandline_options
-    pass
+    game_class = find_game_using_name(game_name)
+    return game_class.modify_commandline_options
 
 
 def create_game(opt):

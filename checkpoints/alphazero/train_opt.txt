@@ -1,0 +1,31 @@
+----------------- Options ---------------
+             arenaCompare: 50                            
+               batch_size: 1                             
+                    beta1: 0.5                           
+                boardsize: 19                            
+          checkpoints_dir: ./checkpoints                 
+           continue_train: False                         
+                    cpuct: 3                             
+              epoch_count: 1                             
+                     game: go                            
+                  gpu_ids: -1                            
+                  isTrain: True                          	[default: None]
+               load_epoch: latest                        
+                load_iter: 0                             	[default: 0]
+                       lr: 0.0002                        
+                max_queue: 200000                        
+                    model: resnet                        
+               n_episodes: 100                           
+                 n_epochs: 1000                          
+               n_mctssims: 200                           
+          n_trainexamples: 25                            
+                     name: alphazero                     
+                    phase: train                         
+               pretrained: False                         
+               print_freq: 100                           
+             save_by_iter: False                         
+          save_epoch_freq: 50                            
+         save_latest_freq: 5000                          
+                   suffix:                               
+              temp_thresh: 15                            
+----------------- End -------------------
