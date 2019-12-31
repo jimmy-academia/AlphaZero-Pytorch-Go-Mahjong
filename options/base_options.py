@@ -57,14 +57,18 @@ class BaseOptions():
         game_name = opt.game
         game_option_setter = games.get_option_setter(game_name)
         parser = game_option_setter(parser, self.isTrain)
-        opt, _ = parser.parse_known_args()  # parse again with new defaults
+
+        # save and return the parser
+        self.parser = parser
+        opt = parser.parse_args()
 
         # modify gpu-related parser options
         if torch.cuda.device_count() <= int(opt.gpu_ids.split(',')[-1]):
-            parser.set_defaults(gpu_ids=str(torch.cuda.device_count()-1))
-        # save and return the parser
-        self.parser = parser
-        return parser.parse_args()
+            opt.gpu_ids=str(torch.cuda.device_count()-1)
+
+        
+        if self.isTrain:
+            opt.n_montesims = max(opt.n_montesims, opt.n_montesims_alt)
 
     def print_options(self, opt):
         """Print and save options

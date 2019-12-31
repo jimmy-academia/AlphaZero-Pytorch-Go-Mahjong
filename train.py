@@ -19,12 +19,16 @@ See options/base_options.py and options/train_options.py for more training optio
 from options.train_options import TrainOptions
 from games import create_game
 from models import create_model
+from mcts import MonteTree
 from coach import Coacher
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
     game = create_game(opt)
     model = create_model(opt, game)      
-    coacher = Coacher(opt, game, model)
+    montetree = MonteTree(opt, game, model)
+    coacher = Coacher(game, model, montetree)
     coacher.learn()
 
+
+check by going through coacher.learn()

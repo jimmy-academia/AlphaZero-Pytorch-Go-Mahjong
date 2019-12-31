@@ -48,18 +48,66 @@ class BaseGame(ABC):
         return parser
 
 
-    def getInitBoard(self):
+    def getInitState(self):
         """
         Returns:
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
-        pass
+        raise NotImplementedError
 
-    def getBoardSize(self):
+    def getNextState(self, env, player, action):
+        """
+        Input:
+            env: current board/environment
+            player: current player (1 or -1)
+            action: action taken by current player
+
+        Returns:
+            nextEnvironment: board/environment after applying action
+            nextPlayer: player who plays in the next turn
+        """
+        raise NotImplementedError
+
+    def getCanonicalForm(self, env, player):
+        """
+        Input:
+            env: current board/environment
+            player: current player (1 or -1)
+
+        Returns:
+            canonicalBoard: returns canonical form of board, which is what the current player sees, and should be independent of player. For e.g. in chess, the canonical form can be chosen to be the players pieces set to white (and his opponent black).
+        """
+        raise NotImplementedError
+
+    def getSymmetricForm(self, cannonicalForm, action_p):
+        """
+        Input:
+            cannonicalForm: current state in cannonicalForm
+            action_p: policy vector
+
+        Returns:
+            symmForms: a list of [(cannonicalForm, action_p)] where each tuple is a symmetrical state of the cannonicalForm and the corresponding action_p vector. This is used when training the neural network from examples.
+        """
+        raise NotImplementedError
+
+    def getGameEnded(self, env, player):
+        """
+        Input:
+            env: current board/environment
+            player: current player
+
+        Returns:
+            result: 0 if game has not ended.
+                    list of value for each player if the game has ended
+        """
+        raise NotImplementedError
+        
+    def getPossibleActionSizes(self):
         """
         Returns:
-            (x,y): a tuple of board dimensions
+            [actionSize]: list of numbers of all possible actions in different scenario
+            for mahjong and other with different action size states
         """
         pass
 
@@ -70,18 +118,6 @@ class BaseGame(ABC):
         """
         pass
 
-    def getNextState(self, board, player, action):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
-            action: action taken by current player
-
-        Returns:
-            nextBoard: board after applying action
-            nextPlayer: player who plays in the next turn (should be -player)
-        """
-        pass
 
     def getValidMoves(self, board, player):
         """
@@ -96,47 +132,8 @@ class BaseGame(ABC):
         """
         pass
 
-    def getGameEnded(self, board, player):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
 
-        Returns:
-            r: 0 if game has not ended. 1 if player won, -1 if player lost,
-               small non-zero value for draw.
-               
-        """
-        pass
 
-    def getCanonicalForm(self, board, player):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
-
-        Returns:
-            canonicalBoard: returns canonical form of board. The canonical form
-                            should be independent of player. For e.g. in chess,
-                            the canonical form can be chosen to be from the pov
-                            of white. When the player is white, we can return
-                            board as is. When the player is black, we can invert
-                            the colors and return the board.
-        """
-        pass
-
-    def getSymmetries(self, board, pi):
-        """
-        Input:
-            board: current board
-            pi: policy vector of size self.getActionSize()
-
-        Returns:
-            symmForms: a list of [(board,pi)] where each tuple is a symmetrical
-                       form of the board and the corresponding pi vector. This
-                       is used when training the neural network from examples.
-        """
-        pass
 
     def stringRepresentation(self, board):
         """

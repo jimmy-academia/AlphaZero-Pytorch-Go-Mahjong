@@ -10,42 +10,40 @@ class GoGame(BaseGame):
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         parser.add_argument('--boardsize', type=int, default=19, help='boardsize')
+        opt = parser.parse_known_args()
+        parser.set_defaults(n_montesims_alt=10*opt.boardsize**2)
         return parser
 
     def __init__(self, opt):
         BaseGame.__init__(self, opt)
-        self.n = opt.boardsize
+        if type(opt.boardsize)==int:
+            self.n = self.n2 = opt.boardsize
+        else:
+            self.n, self.n2 = opt.boardsize
 
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board(self.n)
+        ## rectangle board possible
+        b = Board(self.n, self.n2)
         return b
 
     def getBoardSize(self):
-        # (a,b) tuple
-        return (self.n, self.n)
+        return (self.n, self.n2)
 
     def getActionSize(self):
         # return number of actions
-        return self.n * self.n + 1
+        return self.n * self.n2 + 1
 
     def getNextState(self, board, player, action):
-        # if player takes action on board, return next (board,player)
-        # action must be a valid move
-        # print("getting next state from perspect of player {} with action {}".format(player,action))
-
-        b = board.copy()
-        if action == self.n * self.n:
+        # return next (board, player) after current player, action on board
+        # b = board.copy() ##no need?
+        if action == self.n * self.n2:
             return (b, -player)
+        else:
+            move = (int(action / self.n), action % self.n)
+            board.execute_move(move,player)
+            return (board, -player)
 
-        move = (int(action / self.n), action % self.n)
-        # display(b)
-        # print(player,move)
-        b.execute_move(move,player)
-        # display(b)
-        return (b, -player)
-
-    # modified
     def getValidMoves(self, board, player):
         # return a fixed size binary vector
         valids = [0 for i in range(self.getActionSize())]
@@ -62,7 +60,6 @@ class GoGame(BaseGame):
         # print(legalMoves)
         return np.array(valids)
 
-    # modified
     def getGameEnded(self, board, player,returnScore=False):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
@@ -136,7 +133,7 @@ class GoGame(BaseGame):
         return l
 
     def stringRepresentation(self, board):
-        # 8x8 numpy array (canonical board)
+        # nxn numpy array (canonical board)
         return np.array(board.pieces).tostring()
 
 

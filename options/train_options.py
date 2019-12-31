@@ -23,7 +23,8 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--max_queue', type=int, default=200000)
         parser.add_argument('--temp_thresh', type=int, default=15)
 
-        parser.add_argument('--n_mctssims', type=int, default=200)
+        parser.add_argument('--n_montesims', type=int, default=200)
+        parser.add_argument('--n_montesims_alt', type=int, default=0)
         parser.add_argument('--arenaCompare', type=int, default=50)
         parser.add_argument('--cpuct', type=int, default=3)
 
