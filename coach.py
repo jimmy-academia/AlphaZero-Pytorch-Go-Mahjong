@@ -18,6 +18,7 @@ class Coacher():
         self.currplayer = 1
 
         while True:
+            ## TODO some temp
             canonicalForm = self.game.getCanonicalForm(env, self.currplayer)
             action_p = self.mcts.getActionProb(canonicalForm)
             symmetricForms = self.game.getSymmetricForm(canonicalForm, action_p)
