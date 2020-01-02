@@ -54,7 +54,7 @@ class MonteTree():
         During each node, player plays in first person view, thus canonicalForm.
         """
 
-        endresult = self.game.getGameEnded(canonicalForm, 1)
+        endresult = self.game.getGameEnded(canonicalForm)
         if endresult !=0:
             return endresult
 
@@ -62,9 +62,9 @@ class MonteTree():
 
         if s not in self.Ps:
             # is leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalForm)
+            self.Ps[s], v = self.nnet.predict(canonicalForm.get_net_repr())
 
-            valids = self.game.getValidMoves(canonicalForm, 1)
+            valids = self.game.getValidMoves(canonicalForm)
             self.Ps[s] = self.Ps[s]*valids  ## mask invalid moves
             sum_Ps_s = 
 

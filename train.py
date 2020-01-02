@@ -27,8 +27,6 @@ if __name__ == '__main__':
     game = create_game(opt)
     model = create_model(opt, game)      
     montetree = MonteTree(opt, game, model)
-    coacher = Coacher(game, model, montetree)
+    coacher = Coacher(opt, game, model, montetree)
     coacher.learn()
 
-
-check by going through coacher.learn()

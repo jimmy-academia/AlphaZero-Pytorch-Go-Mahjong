@@ -27,15 +27,6 @@ class BaseGame(ABC):
 
     See othello/OthelloGame.py for an example implementation.
     """
-
-
-    def __init__(self, opt):
-        """Initialize the class; save the options in the class
-        Parameters:
-            opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
-        """
-        self.opt = opt
-
     @staticmethod
     def modify_commandline_options(parser, is_train):
         """Add new dataset-specific options, and rewrite default values for existing options.
@@ -47,24 +38,31 @@ class BaseGame(ABC):
         """
         return parser
 
+    def __init__(self, opt):
+        """Initialize the class; save the options in the class
+        Parameters:
+            opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
+        """
+        self.opt = opt
+
+    ## methods utilized in coach.py 
 
     def getInitState(self):
         """
         Returns:
-            startBoard: a representation of the board (ideally this is the form
-                        that will be the input to your neural network)
+            env: a class of the whole game environment that holds all values of all players
         """
         raise NotImplementedError
 
     def getNextState(self, env, player, action):
         """
         Input:
-            env: current board/environment
-            player: current player (1 or -1)
-            action: action taken by current player
+            env: current environment
+            player: the acting player (int starting from 1)
+            action: action taken by the acting player (int < len(action_p))
 
         Returns:
-            nextEnvironment: board/environment after applying action
+            nextEnvironment: environment after applying action
             nextPlayer: player who plays in the next turn
         """
         raise NotImplementedError
@@ -72,11 +70,12 @@ class BaseGame(ABC):
     def getCanonicalForm(self, env, player):
         """
         Input:
-            env: current board/environment
-            player: current player (1 or -1)
+            env: current environment
+            player: the acting player (int starting from 1)
 
         Returns:
-            canonicalBoard: returns canonical form of board, which is what the current player sees, and should be independent of player. For e.g. in chess, the canonical form can be chosen to be the players pieces set to white (and his opponent black).
+            cannonicalForm: the canonical form of board, which is what the current player sees, and should be independent of player. For e.g. in chess, the canonical form can be chosen to be the players pieces set to white for both players.
+            The cannonicalForm is used for neural nets to make first person decisions and to record states in string representations.
         """
         raise NotImplementedError
 
@@ -84,64 +83,78 @@ class BaseGame(ABC):
         """
         Input:
             cannonicalForm: current state in cannonicalForm
-            action_p: policy vector
+            action_p: policy vector of length action_size
 
         Returns:
-            symmForms: a list of [(cannonicalForm, action_p)] where each tuple is a symmetrical state of the cannonicalForm and the corresponding action_p vector. This is used when training the neural network from examples.
+            symmForms: a list of [(cannonicalForm.net_repr, action_p)] where each tuple is a symmetrical state of the cannonicalForm in net_repr (for input to neural network) and the corresponding action_p vector. This is used to augment training examples for the neural network.
         """
         raise NotImplementedError
 
-    def getGameEnded(self, env, player):
+    def getGameResults(self, env):
         """
         Input:
-            env: current board/environment
-            player: current player
+            env: current environment
+
+        Returns:
+            results: 0 if game has not ended.
+                    dict of value for each player if the game has ended
+        """
+        raise NotImplementedError
+
+    ## methods utilized in mcts.py 
+
+    def getGameEnded(self, cannonicalForm, player):
+        """
+        Input:
+            cannonicalForm: current environment in cannonicalForm
 
         Returns:
             result: 0 if game has not ended.
-                    list of value for each player if the game has ended
+                    the value for current player if the game has ended
+        """
+        raise NotImplementedError
+
+    def stringRepresentation(self, cannonicalForm):
+        """
+        Input:
+            cannonicalForm: current environment in cannonicalForm
+
+        Returns:
+            boardString: a quick record of current environment in string format. Required by MCTS for hashing.
+        """
+        raise NotImplementedError
+
+    def getValidMoves(self, cannonicalForm):
+        """
+        Input:
+            cannonicalForm: current environment in cannonicalForm
+
+        Returns:
+            validMoves: a vector in same size as cannonicalForm.net_repr with 1 and 0 as elements, used as a mask to clear out illegal moves
         """
         raise NotImplementedError
         
-    def getPossibleActionSizes(self):
-        """
-        Returns:
-            [actionSize]: list of numbers of all possible actions in different scenario
-            for mahjong and other with different action size states
-        """
-        pass
-
-    def getActionSize(self):
-        """
-        Returns:
-            actionSize: number of all possible actions
-        """
-        pass
-
-
-    def getValidMoves(self, board, player):
+    def getActionSize(self, cannonicalForm):
         """
         Input:
-            board: current board
-            player: current player
+            cannonicalForm: current environment in cannonicalForm
 
         Returns:
-            validMoves: a binary vector of length self.getActionSize(), 1 for
-                        moves that are valid from the current board and player,
-                        0 for invalid moves
+            actionSize: int, number of all possible actions
         """
-        pass
+        raise NotImplementedError
+
+    ## methods for neural net creation
 
 
+    # def getPossibleActionSizes(self):
+    #     """
+    #     Returns:
+    #         [actionSize]: list of numbers of all possible actions in different scenario
+    #         for mahjong and other with different action size states
+    #     """
+    #     pass
 
+    
+    
 
-    def stringRepresentation(self, board):
-        """
-        Input:
-            board: current board
-
-        Returns:
-            boardString: a quick conversion of board to a string format.
-                         Required by MCTS for hashing.
-        """
-        pass
