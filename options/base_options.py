@@ -23,7 +23,7 @@ class BaseOptions():
         parser.add_argument('--name', type=str, default='alphazero', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # model parameters
-        parser.add_argument('--game', type=str, default='go', help='choose which game. [go]')
+        parser.add_argument('--game', type=str, default='mahjong', help='choose which game. [mahjong]')
         parser.add_argument('--model', type=str, default='resnet', help='chooses which model to use. [resnet]')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')

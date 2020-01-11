@@ -1,178 +1,91 @@
-import numpy as np
-import torch.utils.model_zoo as model_zoo
+"""
+
+LSTM (x): future work
+
+IntuitiveMachine:
+    nxn input to nxn output
+
+    game_specs:
+        in_channels
+        block_nums
+        sample_input
+        action_size
+    
+"""
 import torch
-import torchvision as tv
-import torch.nn as nn
-#from torch.nn.functional import Variable
-from scipy import misc
-import math
-import torch.nn.functional as F
 
-from torchvision.models.resnet import ResNet
-
-
-class AlphaNet(ResNet):
-    def __init__(self, args, game, layers):
-        block=AlphaBlock
-        self.board_x, self.board_y = game.getBoardSize()
-        self.action_size = game.getActionSize()
-        self.args = args
-        outputShift=1 if self.board_x in [6,7,11] else 4
-        self.inplanes = 64
-
-        super(ResNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=1, padding=2,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=5, stride=1, padding=2)
-
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        self.avgpool = nn.AvgPool2d(2, stride=1)
-        self.fc_p= nn.Linear(512 * block.expansion*outputShift,self.action_size)
-        self.fc_v=nn.Linear(512* block.expansion*outputShift,1)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
-        return nn.Sequential(*layers)
-
+class IntuitiveMachine(torch.nn.Module):
+    
+    def __init__(self, game_specs):
+        super(IntuitiveMachine, self).__init__()
+        self.frontcourt = self.create_frontcourt(game_specs.in_channels)
+        self.mainbuild = self.create_mainbuild(game_specs.block_nums)
+        self.build_finalgarage(game_specs.sample_input, game_specs.action_size)
 
     def forward(self, x):
-        # print("input x shape:{}".format(x.shape))
-        x= x.view(-1, 1, self.board_x, self.board_y)
-        # x=x.view(1,*x.shape)
+        x = self.frontcourt(x)
+        x = self.mainbuild(x)
+        x = self.backcourt(x)
+        p, v = self.fc_p(x), self.fc_v(x)
+        return p, v
 
-        # print("view output:{}".format(x.shape))
+    def create_frontcourt(self, in_channels):
+        modules = [
+            torch.nn.Conv2d(in_channels, 64, 5, 1, 2, bias=False),
+            torch.nn.BatchNorm2d(64),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(5,1,2)
+        ]
+        return torch.nn.Sequential(*modules)
 
-        x = self.conv1(x)
-        # print("conv1 output:{}".format(x.shape))
-        x = self.bn1(x)
-        # print("bn1 output:{}".format(x.shape))
-        x = self.relu(x)
-        # print("relu output:{}".format(x.shape))
-        x = self.maxpool(x)
-        # print("maxpool output:{}".format(x.shape))
 
-        x = self.layer1(x)
-        # print("layer1 output:{}".format(x.shape))
-        x = self.layer2(x)
-        # print("layer2 output:{}".format(x.shape))
-        x = self.layer3(x)
-        # print("layer3 output:{}".format(x.shape))
-        x = self.layer4(x)
-        # print("layer4 output:{}".format(x.shape))
+    def create_mainbuild(self, block_nums, strides=None):
+        if strides is None:
+            strides = [1 for i in block_nums]
+        modules = []
+        for i in range(len(block_nums)):
+            modules.append(self._make_layer(64*2**i, 64, block_nums[i], strides[i]))
 
-        try:
-            x = self.avgpool(x)
-        except:
-            pass
-        # print("avgpool output:{}".format(x.shape))
+        modules.append(torch.nn.AvgPool2d(2, stride=1))
+        return torch.nn.Sequential(*modules)
+
+    def build_finalgarage(self, sample, action_size):
+        x = self.mainbuild(self.frontcourt(sample))
         x = x.view(x.size(0), -1)
-        p = self.fc_p(x)
-        # print("p output:{}".format(p.shape))
-        v = self.fc_v(x)
-        # print("v output:{}".format(p.shape))
-        return F.log_softmax(p,dim=1),F.tanh(v)
+        latent_dim = x.size(1)
+        lin_layer = torch.nn.Linear(latent_dim, action_size)
+        self.fc_p = lambda x: torch.nn.functional.log_softmax(lin_layer(x), dim=1)
+
+        lin_layer = torch.nn.Linear(latent_dim, 1)
+        self.fc_v = lambda x: torch.nn.functional.tanh(lin_layer(x))
 
 
-def conv3x3(in_planes, out_planes, stride=1):
-    "3x3 convolution with padding"
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    def _make_layer(self, in_channels, hid_channels, num_blocks, stride=1):
+        modules = []
+        modules.append(AlphaBlock(in_channels, hid_channels, stride))
+        for __ in range(num_blocks - 2):
+            modules.append(AlphaBlock(hid_channels, hid_channels, stride))
+        modules.append(AlphaBlock(hid_channels, in_channels, stride))
 
+        return torch.nn.Sequential(*modules)
 
-
-class AlphaBottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(AlphaBottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes * 4)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        return out
-
-
-
-
-class AlphaBlock(nn.Module):
-    expansion = 1
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+class AlphaBlock(torch.nn.Module):
+    def __init__(self, in_channels, hid_channels, stride):
         super(AlphaBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        self.stride = stride
+
+        modules = [
+            torch.nn.Conv2d(in_channels, hid_channels, 3, stride, 1, bias=False),
+            torch.nn.BatchNorm2d(hid_channels)
+            torch.nn.ReLU(inplace=True)
+            torch.nn.Conv2d(hid_channels, hid_channels, 3, stride, 1, bias=False),
+            torch.nn.BatchNorm2d(hid_channels)
+        ]
+        self.conv_modules = torch.nn.Sequential(*modules)
+        self.relu = torch.nn.ReLU(inplace=True)
 
     def forward(self, x):
         residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
+        out = self.conv_modules(x)
         out += residual
         out = self.relu(out)
 

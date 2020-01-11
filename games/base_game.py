@@ -1,7 +1,9 @@
-
-"""This module implements an abstract base class (ABC) 'BaseDataset' for datasets.
-It also includes common transformation functions (e.g., get_transform, __scale_width), which can be later used in subclasses.
 """
+BaseGame, 
+    defining methods for game independent call from Coacher and mcts
+"""
+
+
 import random
 import numpy as np
 import torch.utils.data as data
@@ -11,22 +13,6 @@ from abc import ABC, abstractmethod
 
 
 class BaseGame(ABC):
-    """This class is an abstract base class (ABC) for datasets.
-    To create a subclass, you need to implement the following four functions:
-    -- <__init__>:                      initialize the class, first call BaseDataset.__init__(self, opt).
-    -- <__len__>:                       return the size of dataset.
-    -- <__getitem__>:                   get a data point.
-    -- <modify_commandline_options>:    (optionally) add dataset-specific options and set default options.
-    """
-    """
-    This class specifies the base Game class. To define your own game, subclass
-    this class and implement the functions below. This works when the game is
-    two-player, adversarial and turn-based.
-
-    Use 1 for player1 and -1 for player2.
-
-    See othello/OthelloGame.py for an example implementation.
-    """
     @staticmethod
     def modify_commandline_options(parser, is_train):
         """Add new dataset-specific options, and rewrite default values for existing options.
@@ -144,8 +130,7 @@ class BaseGame(ABC):
         """
         raise NotImplementedError
 
-    ## methods for neural net creation
-
+    ## methods for model dependancy.
 
     # def getPossibleActionSizes(self):
     #     """

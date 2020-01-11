@@ -1,16 +1,25 @@
+
+"""
+ResNetModel
+    define model using resnet layers as core
+    networks are created based on input (layer_num, nxn size) and output (layer_num, nxn size)
+    have been tuned for the following games:
+        * Mahjong
+
+"""
+
+
 import torch
 from .base_model import BaseModel
 import numpy as np
-from .network import AlphaNet
+from .network import IntuitiveMachine
 
 class ResNetModel(BaseModel):
     def __init__(self, opt, game):
         BaseModel.__init__(self, opt)
-        self.nnet = create_model(opt, game)
-        self.board_x, self.board_y = game.getBoardSize()
-        self.action_size = game.getActionSize()
 
-        self.optimizer = torch.optim.Adam(self.nnet.parameters())
+        self.networks = self.create_networks_by(game)
+        self.optimizers = [torch.optim.Adam(net.parameters()) for net in self.networks]
 
     def modify_commandline_options(parser, is_train=True):
         """Add new model-specific options, and rewrite default values for existing options.
@@ -22,6 +31,13 @@ class ResNetModel(BaseModel):
         """
         parser.add_argument('--pretrained', action='store_true', help='whether use pretrained model of resnet')
         return parser
+
+    def create_networks_by(game):
+        networks = []
+        game_specs_list = game.getGameSpecsList()
+        for game_specs in game_specs_list:
+            networks.append(IntuitiveMachine(game_specs))
+        return networks
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets*outputs)/targets.size()[0]

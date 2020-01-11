@@ -1,8 +1,8 @@
 import random
 
 """
-class for training AlphaZero implementations on different game,
-written to be game independent
+Game, model independent class Coacher
+    for training AlphaZero implementations on different games.
 """
 
 class Coacher():
@@ -21,14 +21,14 @@ class Coacher():
         self.currplayer = 1
 
         while True:
-            ## TODO some temp
+            ## TODO some temperature
             canonicalForm = self.game.getCanonicalForm(env, self.currplayer)
-            action_p = self.mcts.getActionProb(canonicalForm)
+            action_list, action_p = self.mcts.getActionProb(canonicalForm, temperature)
             symmetricForms = self.game.getSymmetricForm(canonicalForm, action_p)
             for b, pi in symmetricForms:
                 trianingItems.append([b, self.currplayer, pi])
 
-            action = random.choice(population=list(range(len(action_p))), weight=action_p)
+            action = random.choice(population=action_list, weight=action_p)
             env, self.currplayer = self.game.getNextState(env, self.currplayer, action)
 
             results = self.game.getGameResults(env, self.currplayer)

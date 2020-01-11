@@ -56,4 +56,6 @@ class MahJongGame(BaseGame):
     def getActionSize(self, cannonicalForm):
         return canonicalForm.actionsize
 
+    ## methods for model dependancy.
+
 

@@ -1,3 +1,11 @@
+"""
+
+Game, model independent class MonteTree
+    for performing Monte Carlo Tree Search
+    includes option for imperfect knowledge game
+"""
+
+
 class MonteTree():
 
     def __init__(self, opt, game, model):
@@ -18,12 +26,12 @@ class MonteTree():
     def list_by_action(state_action_dict, state, actionsize):
         return [state_action_dict[(state, a)] if (state, a) in state_action_dict else 0 for a in range(actionsize)]
 
-    def getActionProb(self, canonicalForm, temp=1):
+    def getActionProb(self, canonicalForm, temperature=1):
         """
         perform n_montesims simulations of Monte Carlo Tree Search starting from CanonicalForm. Then choose return policy vector calculated by N, i.e. we choose the most traversed pass during the monte carlo sims from current state.
         During each node, player plays in first person view, thus canonicalForm.
         Returns:
-            probs: a policy vector of probability of action proportional to Nsa[(s,a)]**(1./temp)
+            probs: a policy vector of probability of action proportional to Nsa[(s,a)]**(1./temperature)
         """
 
         for i in range(self.opt.n_montesims):
@@ -33,13 +41,13 @@ class MonteTree():
         s = self.game.stringRepresentation(canonicalForm)
 
         N = self.list_by_action(self.Nsa, s, self.game.getActionSize())
-        if temp != 0:
-            N = [x**(1./temp) for x in N]
+        if temperature != 0:
+            N = [x**(1./temperature) for x in N]
             Nsum = sum(N)
             N = [x/sum(N)-x if sum(N)-x > 0 else 0 for x in N]
             valids = self.game.getValidMoves(canonicalForm, player=1) #mask illegal moves
         else:
-            # deterministic, temp==0
+            # deterministic, temperature==0
             argmaxN = N.index(max(N))
             N = [0 for x in N]
             N[argmaxN] = 1
@@ -113,4 +121,3 @@ class MonteTree():
         return -v
 
 
-?????
