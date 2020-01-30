@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 """
 Game, model independent class Coacher
@@ -7,10 +8,11 @@ Game, model independent class Coacher
 
 class Coacher():
 
-    def __init__(self, opt, game, model, montetree):
+    def __init__(self, opt, game, model, montetree, advmodels):
         self.opt = opt
         self.game = game
         self.nnet = model
+        self.advnets = advmodels
         self.mcts = montetree
 
         self.TrainExamples = deque([], maxlen=self.args.max_queue)
@@ -19,9 +21,10 @@ class Coacher():
         env = self.game.getInitState()
         trianingItems = []
         self.currplayer = 1
+        temperature = 1
 
         while True:
-            ## TODO some temperature
+            temperature *= 0.99 
             canonicalForm = self.game.getCanonicalForm(env, self.currplayer)
             action_list, action_p = self.mcts.getActionProb(canonicalForm, temperature)
             symmetricForms = self.game.getSymmetricForm(canonicalForm, action_p)
@@ -36,7 +39,7 @@ class Coacher():
                 return [self.finalresult(x, results) for x in trianingItems]
 
     def finalresult(self, x, results):
-        return (x[0], x[2], results[x[1]])
+        return (x[0], x[2], results[x[1]])  ## results is a dict!!!
         # board, action, value
 
     def learn(self):
@@ -48,9 +51,31 @@ class Coacher():
 
             self.TrainExamples.append(episodeExample)
 
-            # save example
+            is self.TrainExamples > self.opt.num_TrainExamples:
+                self.TrainExamples.pop(0)
 
-            # shuffle and flatten
-            # train
+            epochExamples = []
+            for ex in self.TrainExamples:
+                epochExamples.extend(ex)
+            random.shuffle(epochExamples)
+
+            # temp save
+            self.nnet.save_checkpoint()
+            for pnet in self.advnets:
+                pnet.load_checkpoint()
+
+            #train
+            self.nnet.train(epochExamples)
+
+            #self play
+            arena = Arena(self.nnet, self.advnets, self.game)
+            arena.playGames()
+
+            if arena.better():
+                self.nnet.save_checkpoint('best')
+            else:
+                self.nnet.load_checkpoint()
+
+                
 
 

@@ -4,6 +4,7 @@ ResNetModel
     define model using resnet layers as core
     networks are created based on input (layer_num, nxn size) and output (layer_num, nxn size)
     have been tuned for the following games:
+        * Go
         * Mahjong
 
 """
@@ -64,6 +65,9 @@ class ResNetModel(BaseModel):
                 # if args.cuda:
                     # boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
                 # boards, target_pis, target_vs = Variable(boards), Variable(target_pis), Variable(target_vs)
+
+
+                
 
                 out_pi, out_v = self.nnet(boards)
 

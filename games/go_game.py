@@ -1,17 +1,20 @@
 import numpy as np
 
-from .base_game import BaseGame
+from .base_game import BaseGame, gamespecs
 from .logic_go import Board
 
 class GoGame(BaseGame):
     """
     This class implements the Go game, for alphazero implementation
+    the two players are 1 and -1
     """
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
-        parser.add_argument('--boardsize', type=int, default=19, help='boardsize')
+        parser.add_argument('--boardsize', type=int, default=19, help='boardsize, one int for square board, two int for rectangle')
         opt = parser.parse_known_args()
-        parser.set_defaults(n_montesims_alt=10*opt.boardsize**2)
+
+        boardarea = opt.boardsize**2 if type(opt.boardsize)==int else opt.boardsize[0]*opt.boardsize[1]
+        parser.set_defaults(n_montesims_alt=10*boardarea)
         return parser
 
     def __init__(self, opt):
@@ -21,18 +24,17 @@ class GoGame(BaseGame):
         else:
             self.n, self.n2 = opt.boardsize
 
-    def getInitBoard(self):
+
+    ### coach methods ###
+
+    def getInitState(self):
         # return initial board (numpy board)
         ## rectangle board possible
         b = Board(self.n, self.n2)
         return b
 
-    def getBoardSize(self):
-        return (self.n, self.n2)
-
-    def getActionSize(self):
-        # return number of actions
-        return self.n * self.n2 + 1
+    # def getBoardSize(self):
+        # return (self.n, self.n2)
 
     def getNextState(self, board, player, action):
         # return next (board, player) after current player, action on board
@@ -44,21 +46,36 @@ class GoGame(BaseGame):
             board.execute_move(move,player)
             return (board, -player)
 
-    def getValidMoves(self, board, player):
-        # return a fixed size binary vector
-        valids = [0 for i in range(self.getActionSize())]
-        b = board.copy()
-        legalMoves = b.get_legal_moves(player)
-        # display(board)
-        # print("legal moves{}".format(legalMoves))
-        if len(legalMoves) == 0:
-            valids[-1] = 1
-            return np.array(valids)
-        for x, y in legalMoves:
-            valids[self.n * x + y] = 1
-        # display(b)
-        # print(legalMoves)
-        return np.array(valids)
+
+    def getCanonicalForm(self, board, player):
+        # return state if player==1, else return -state if player==-1
+        canonicalBoard=board.copy()
+
+        canonicalBoard.pieces= board.pieces* player
+
+        # print('getting canon:')
+        # print(b_pieces)
+        return canonicalBoard
+
+    # modified
+    def getSymmetricForm(self, board, pi):
+        # mirror, rotational
+        assert(len(pi) == self.n**2 + 1)  # 1 for pass
+        pi_board = np.reshape(pi[:-1], (self.n, self.n))
+        l = []
+        b_pieces = board.pieces
+        for i in range(1, 5):
+            for j in [True, False]:
+                newB = np.rot90(b_pieces, i)
+                newPi = np.rot90(pi_board, i)
+                if j:
+                    newB = np.fliplr(newB)
+                    newPi = np.fliplr(newPi)
+                l += [(newB, list(newPi.ravel()) + [pi[-1]])]
+        return l
+
+
+    ### mcts methods ###
 
     def getGameEnded(self, board, player,returnScore=False):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
@@ -105,36 +122,36 @@ class GoGame(BaseGame):
         score_black -= board.passes_black
         return (score_black, score_white)
 
-    def getCanonicalForm(self, board, player):
-        # return state if player==1, else return -state if player==-1
-        canonicalBoard=board.copy()
-
-        canonicalBoard.pieces= board.pieces* player
-
-        # print('getting canon:')
-        # print(b_pieces)
-        return canonicalBoard
-
-    # modified
-    def getSymmetries(self, board, pi):
-        # mirror, rotational
-        assert(len(pi) == self.n**2 + 1)  # 1 for pass
-        pi_board = np.reshape(pi[:-1], (self.n, self.n))
-        l = []
-        b_pieces = board.pieces
-        for i in range(1, 5):
-            for j in [True, False]:
-                newB = np.rot90(b_pieces, i)
-                newPi = np.rot90(pi_board, i)
-                if j:
-                    newB = np.fliplr(newB)
-                    newPi = np.fliplr(newPi)
-                l += [(newB, list(newPi.ravel()) + [pi[-1]])]
-        return l
-
     def stringRepresentation(self, board):
         # nxn numpy array (canonical board)
         return np.array(board.pieces).tostring()
+
+    def getValidMoves(self, board, player):
+        # return a fixed size binary vector
+        valids = [0 for i in range(self.getActionSize())]
+        b = board.copy()
+        legalMoves = b.get_legal_moves(player)
+        # display(board)
+        # print("legal moves{}".format(legalMoves))
+        if len(legalMoves) == 0:
+            valids[-1] = 1
+            return np.array(valids)
+        for x, y in legalMoves:
+            valids[self.n * x + y] = 1
+        # display(b)
+        # print(legalMoves)
+        return np.array(valids)
+
+    def getActionSize(self):
+        return self.n * self.n2 + 1
+
+
+    ## model specs
+    def getGameSpecsList(self):
+        gospecs = gamespecs()
+        gospecs.in_channels = 
+
+        return gamespecs
 
 
 def display(board):

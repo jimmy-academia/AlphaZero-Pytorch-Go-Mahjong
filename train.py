@@ -25,8 +25,9 @@ from coach import Coacher
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
     game = create_game(opt)
-    model = create_model(opt, game)      
+    model = create_model(opt, game)   
+    admodels = [create_model(opt, game) for __ in range(opt.num_opp)]   
     montetree = MonteTree(opt, game, model)
-    coacher = Coacher(opt, game, model, montetree)
+    coacher = Coacher(opt, game, model, montetree, advmodels)
     coacher.learn()
 

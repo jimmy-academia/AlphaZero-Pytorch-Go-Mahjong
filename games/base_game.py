@@ -132,14 +132,24 @@ class BaseGame(ABC):
 
     ## methods for model dependancy.
 
-    # def getPossibleActionSizes(self):
-    #     """
-    #     Returns:
-    #         [actionSize]: list of numbers of all possible actions in different scenario
-    #         for mahjong and other with different action size states
-    #     """
-    #     pass
+    def getGameSpecsList(self):
+        """
+        Returns:
+            [Specs]: list of n gamespecs to create n models
+        gameSpecs:
+            in_channels
+            block_nums
+            sample_input
+            action_size
+        """
+        raise NotImplementedError
 
-    
+
+class gamespecs:
+    def __init__(self):
+        self.in_channels = None
+        self.block_nums = None
+        self.sample_input = None
+        self.action_size = None
     
 
